@@ -1,6 +1,7 @@
 package it.unisa.control;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 
 import javax.servlet.ServletException;
@@ -11,6 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import it.unisa.model.*;
+import it.unisa.model.UserDao;
 
 /**
  * Servlet implementation class LoginServlet
@@ -30,11 +32,9 @@ public class LoginServlet extends HttpServlet {
 		
 		try
 		{	    
-
 		     UserBean user = new UserBean();
-		     user.setUsername(request.getParameter("un"));
-		     user.setPassword(request.getParameter("pw"));
-		     user = usDao.doRetrieve(request.getParameter("un"),request.getParameter("pw"));
+		     
+		     user = usDao.doRetrieve(request.getParameter("un"), toHash(request.getParameter("pw")));
 			   		    
 		    
 		     String checkout = request.getParameter("checkout");
@@ -60,4 +60,26 @@ public class LoginServlet extends HttpServlet {
 			System.out.println("Error:" + e.getMessage());
 		}
 		  }
+	
+	
+		public String toHash(String pass){
+			
+			String hashString = null;
+			try{
+				java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-512");
+			    byte[] hash = digest.digest(pass.getBytes(StandardCharsets.UTF_8));
+			    hashString = "";
+			    for(int i=0; i<hash.length ; i++){
+			        hashString += Integer.toHexString(
+			                (hash[i] & 0xFF) | 0x100)
+			                .toLowerCase().substring(1,3);
+			    }
+			} catch (java.security.NoSuchAlgorithmException e){
+			    System.out.println(e);
+			}
+	
+			return hashString;
+		}
 	}
+
+

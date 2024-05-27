@@ -1,5 +1,6 @@
 package it.unisa.model;
 
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -48,7 +49,7 @@ public class UserDao implements UserDaoInterfaccia {
 			preparedStatement.setString(1, user.getNome());
 			preparedStatement.setString(2, user.getCognome());
 			preparedStatement.setString(3, user.getUsername());
-			preparedStatement.setString(4, user.getPassword());
+			preparedStatement.setString(4, toHash(user.getPassword()));
 			preparedStatement.setString(5, user.getEmail());
 			preparedStatement.setDate(6, (Date) user.getDataDiNascita());
 			preparedStatement.setString(7, user.getCartaDiCredito());
@@ -241,5 +242,23 @@ public class UserDao implements UserDaoInterfaccia {
 		}
 	}
 
+	public String toHash(String pass){
+			
+			String hashString = null;
+			try{
+				java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-512");
+			    byte[] hash = digest.digest(pass.getBytes(StandardCharsets.UTF_8));
+			    hashString = "";
+			    for(int i=0; i<hash.length ; i++){
+			        hashString += Integer.toHexString(
+			                (hash[i] & 0xFF) | 0x100)
+			                .toLowerCase().substring(1,3);
+			    }
+			} catch (java.security.NoSuchAlgorithmException e){
+			    System.out.println(e);
+			}
+	
+			return hashString;
+		}
 	}
 
