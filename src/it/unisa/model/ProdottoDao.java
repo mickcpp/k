@@ -3,6 +3,7 @@ package it.unisa.model;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -148,20 +149,44 @@ public class ProdottoDao implements ProdottoDaoInterfaccia{
 	public synchronized ArrayList<ProdottoBean> doRetrieveAll(String order) throws SQLException {
 		Connection connection = null;
 		PreparedStatement preparedStatement = null;
+		PreparedStatement pst = null;
+		ResultSet rs = null;
+		ResultSetMetaData metaData = null;
 
 		ArrayList<ProdottoBean> products = new ArrayList<ProdottoBean>();
 
 		String selectSQL = "SELECT * FROM " + ProdottoDao.TABLE_NAME;
 
-		if (order != null && !order.equals("")) {
-			selectSQL += " ORDER BY " + order;
-		}
-
 		try {
 			connection = ds.getConnection();
-			preparedStatement = connection.prepareStatement(selectSQL);
+			pst = connection.prepareStatement(selectSQL);
 
-			ResultSet rs = preparedStatement.executeQuery();
+			if (order != null && !order.isEmpty()) {
+	            // Ottieni i metadati della tabella
+	            pst = connection.prepareStatement(selectSQL + " LIMIT 1");
+	            rs = pst.executeQuery();
+	            metaData = rs.getMetaData();
+
+	            boolean isValidOrderColumn = false;
+
+	            // Verifica se l'ordine di ordinamento è un nome di colonna valido
+	            for (int i = 1; i <= metaData.getColumnCount(); i++) {
+	                if (order.equalsIgnoreCase(metaData.getColumnName(i))) {
+	                    isValidOrderColumn = true;
+	                    break;
+	                }
+	            }
+
+	            // Aggiungi l'ordine di ordinamento alla query solo se è valido
+	            if (isValidOrderColumn) {
+	                selectSQL += " ORDER BY " + order;
+	            } else {
+	                throw new SQLException("Colonna di ordinamento non valida: " + order);
+	            }
+	        }
+		
+			preparedStatement = connection.prepareStatement(selectSQL);
+		    rs = preparedStatement.executeQuery();
 
 			while (rs.next()) {
 				ProdottoBean bean = new ProdottoBean();
@@ -301,7 +326,6 @@ public class ProdottoDao implements ProdottoDaoInterfaccia{
 				bean.setDescrizioneDettagliata(rs.getString("DESCRIZIONE_DETTAGLIATA"));
 				
 				prodotti.add(bean);
-
 
 			}
 
