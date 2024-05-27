@@ -50,8 +50,14 @@ public class HomeServlet extends HttpServlet {
 			e.printStackTrace();
 		}
 		
-		RequestDispatcher dispatcher = getServletContext().getRequestDispatcher("/" + redirectedPage);
-		dispatcher.forward(request, response);
+		if (isAccessToProhibitedResource(redirectedPage)) {
+	            // Se il parametro page è uguale a uno dei file proibiti, reindirizza alla home page
+	            response.sendRedirect(request.getContextPath() + "/Home.jsp");
+	            return;
+        } else {
+            RequestDispatcher dispatcher = getServletContext().getRequestDispatcher("/" + redirectedPage);
+            dispatcher.forward(request, response);
+        }
 	}
 
 
@@ -60,4 +66,11 @@ public class HomeServlet extends HttpServlet {
 		doGet(request, response);
 	}
 
+	private boolean isAccessToProhibitedResource(String page) {
+        if (page == null) {
+            return false;
+        }
+        page = page.toLowerCase();
+        return (page.contains("web-inf/") || page.contains("meta-inf/"));
+    }
 }
