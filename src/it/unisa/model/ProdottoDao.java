@@ -32,44 +32,51 @@ public class ProdottoDao implements ProdottoDaoInterfaccia{
 	
 	private static final String TABLE_NAME = "prodotto";
 
-	@Override
 	public synchronized void doSave(ProdottoBean product) throws SQLException {
+	    Connection connection = null;
+	    PreparedStatement preparedStatement = null;
 
-		Connection connection = null;
-		PreparedStatement preparedStatement = null;
+	    String insertSQL = "INSERT INTO " + ProdottoDao.TABLE_NAME
+	            + " (NOME, PIATTAFORMA, DESCRIZIONE, PREZZO, QUANTITA, GENERE, DATA_USCITA, IN_VENDITA, IVA, IMMAGINE, DESCRIZIONE_DETTAGLIATA) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-		String insertSQL = "INSERT INTO " + ProdottoDao.TABLE_NAME
-				+ " (NOME, PIATTAFORMA, DESCRIZIONE, PREZZO, QUANTITA, GENERE, DATA_USCITA, IN_VENDITA, IVA, IMMAGINE, DESCRIZIONE_DETTAGLIATA) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)";
+	    try {
+	        connection = ds.getConnection();
+	        connection.setAutoCommit(false);
+	        preparedStatement = connection.prepareStatement(insertSQL);
+	        
+	        // Sanitizzare l'input dell'utente
+	        String nomeSanitized = sanitize(product.getNome());
+	        String piattaformaSanitized = sanitize(product.getPiattaforma());
+	        String descrizioneSanitized = sanitize(product.getDescrizione());
+	        String genereSanitized = sanitize(product.getGenere());
+	        String dataUscitaSanitized = sanitize(product.getDataUscita());
+	        String ivaSanitized = sanitize(product.getIva());
+	        String immagineSanitized = product.getImmagine();
+	        String descrizioneDettagliataSanitized = sanitize(product.getDescrizioneDettagliata());
 
-		try {
-			connection = ds.getConnection();
-			connection.setAutoCommit(false);
-			preparedStatement = connection.prepareStatement(insertSQL);
-			preparedStatement.setString(1, product.getNome());
-			preparedStatement.setString(2, product.getPiattaforma());
-			preparedStatement.setString(3, product.getDescrizione());
-			preparedStatement.setDouble(4, product.getPrezzo());
-			preparedStatement.setInt(5, product.getQuantità());
-			preparedStatement.setString(6,product.getGenere());
-			preparedStatement.setString(7, product.getDataUscita());
-			preparedStatement.setBoolean(8, product.isInVendita());
-			preparedStatement.setString(9, product.getIva());
-			preparedStatement.setString(10, product.getImmagine());
-			preparedStatement.setString(11, product.getDescrizioneDettagliata());
+	        preparedStatement.setString(1, nomeSanitized);
+	        preparedStatement.setString(2, piattaformaSanitized);
+	        preparedStatement.setString(3, descrizioneSanitized);
+	        preparedStatement.setDouble(4, product.getPrezzo());
+	        preparedStatement.setInt(5, product.getQuantità());
+	        preparedStatement.setString(6, genereSanitized);
+	        preparedStatement.setString(7, dataUscitaSanitized);
+	        preparedStatement.setBoolean(8, product.isInVendita());
+	        preparedStatement.setString(9, ivaSanitized);
+	        preparedStatement.setString(10, immagineSanitized);
+	        preparedStatement.setString(11, descrizioneDettagliataSanitized);
 
-
-			preparedStatement.executeUpdate();
-
-			connection.commit();
-		} finally {
-			try {
-				if (preparedStatement != null)
-					preparedStatement.close();
-			} finally {
-				if (connection != null)
-					connection.close();
-			}
-		}
+	        preparedStatement.executeUpdate();
+	        connection.commit();
+	    } finally {
+	        try {
+	            if (preparedStatement != null)
+	                preparedStatement.close();
+	        } finally {
+	            if (connection != null)
+	                connection.close();
+	        }
+	    }
 	}
 
 	@Override
@@ -341,6 +348,17 @@ public class ProdottoDao implements ProdottoDaoInterfaccia{
 		return prodotti;
 	}
 	
-	
+    public static String sanitize(String input) {
+        if (input == null) {
+            return null;
+        }
+        // Sostituisci i caratteri speciali con le loro entità HTML
+        return input.replaceAll("&", "&amp;")
+                    .replaceAll("<", "&lt;")
+                    .replaceAll(">", "&gt;")
+                    .replaceAll("\"", "&quot;")
+                    .replaceAll("'", "&#x27;")
+                    .replaceAll("/", "&#x2F;");
+    }
 
 }
